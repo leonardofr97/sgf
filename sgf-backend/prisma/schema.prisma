@@ -1,0 +1,74 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Family {
+  id      Int     @id @default(autoincrement())
+  name    String
+  users   User[]
+  tasks   Task[]
+  events  Event[]
+  documents Document[]
+}
+
+model User {
+  id         Int     @id @default(autoincrement())
+  name       String
+  email      String  @unique
+  password   String
+  role       String  @default("member")
+  familyId   Int
+  family     Family  @relation(fields: [familyId], references: [id])
+  comments   Comment[]
+}
+
+model Task {
+  id          Int       @id @default(autoincrement())
+  title       String
+  description String?
+  priority    String     @default("media")
+  status      String     @default("pendente")
+  dueDate     DateTime?
+  createdBy   Int
+  familyId    Int
+  family      Family     @relation(fields: [familyId], references: [id])
+  assignees   User[]     @relation("TaskAssignees", references: [id])
+  comments    Comment[]
+}
+
+model Event {
+  id          Int       @id @default(autoincrement())
+  title       String
+  description String?
+  date        DateTime
+  recurrence  String?
+  familyId    Int
+  family      Family  @relation(fields: [familyId], references: [id])
+  comments    Comment[]
+}
+
+model Document {
+  id          Int       @id @default(autoincrement())
+  name        String
+  category    String?
+  fileUrl     String
+  uploadedBy  Int
+  familyId    Int
+  family      Family  @relation(fields: [familyId], references: [id])
+  comments    Comment[]
+}
+
+model Comment {
+  id         Int       @id @default(autoincrement())
+  content    String
+  createdAt  DateTime  @default(now())
+  itemType   String
+  itemId     Int
+  userId     Int
+  user       User      @relation(fields: [userId], references: [id])
+}
