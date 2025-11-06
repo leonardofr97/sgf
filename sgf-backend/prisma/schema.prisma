@@ -17,14 +17,15 @@ model Family {
 }
 
 model User {
-  id         Int     @id @default(autoincrement())
+  id         Int        @id @default(autoincrement())
   name       String
-  email      String  @unique
+  email      String     @unique
   password   String
-  role       String  @default("member")
+  role       String     @default("member")
   familyId   Int
-  family     Family  @relation(fields: [familyId], references: [id])
+  family     Family     @relation(fields: [familyId], references: [id])
   comments   Comment[]
+  assignedTasks Task[]  @relation("TaskAssignees")
 }
 
 model Task {
@@ -37,8 +38,8 @@ model Task {
   createdBy   Int
   familyId    Int
   family      Family     @relation(fields: [familyId], references: [id])
-  assignees   User[]     @relation("TaskAssignees", references: [id])
-  comments    Comment[]
+  assignees   User[]     @relation("TaskAssignees")
+  comments    Comment[]  @relation("TaskComments")
 }
 
 model Event {
@@ -48,8 +49,8 @@ model Event {
   date        DateTime
   recurrence  String?
   familyId    Int
-  family      Family  @relation(fields: [familyId], references: [id])
-  comments    Comment[]
+  family      Family    @relation(fields: [familyId], references: [id])
+  comments    Comment[] @relation("EventComments")
 }
 
 model Document {
@@ -59,8 +60,8 @@ model Document {
   fileUrl     String
   uploadedBy  Int
   familyId    Int
-  family      Family  @relation(fields: [familyId], references: [id])
-  comments    Comment[]
+  family      Family    @relation(fields: [familyId], references: [id])
+  comments    Comment[] @relation("DocumentComments")
 }
 
 model Comment {
@@ -71,4 +72,13 @@ model Comment {
   itemId     Int
   userId     Int
   user       User      @relation(fields: [userId], references: [id])
+
+  taskId     Int? 
+  task       Task?     @relation("TaskComments", fields: [taskId], references: [id])
+
+  eventId    Int?
+  event      Event?    @relation("EventComments", fields: [eventId], references: [id])
+
+  documentId Int?
+  document   Document? @relation("DocumentComments", fields: [documentId], references: [id])
 }
