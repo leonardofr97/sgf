@@ -9,6 +9,27 @@ export const createTask = async (req, res) => {
       where: { id: req.user.userId }
     });
 
+    let assigneesData = undefined;
+
+    if (assigneeIds && assigneeIds.length > 0) {
+      const validUsers = await prisma.user.findMany({
+        where: {
+          id: { in: assigneeIds },
+          familyId: user.familyId // ensure they belong to the same family
+        }
+      });
+
+      if (validUsers.length !== assigneeIds.length) {
+        return res.status(400).json({
+          error: "Um ou mais usuários não existem ou não pertencem à família"
+        });
+      }
+
+      assigneesData = {
+        connect: assigneeIds.map(id => ({ id }))
+      };
+    }
+
     const task = await prisma.task.create({
       data: {
         title,
@@ -17,11 +38,7 @@ export const createTask = async (req, res) => {
         dueDate: dueDate ? new Date(dueDate) : null,
         createdBy: user.id,
         familyId: user.familyId,
-        assignees: assigneeIds
-          ? {
-              connect: assigneeIds.map(id => ({ id }))
-            }
-          : undefined
+        assignees: assigneesData
       },
       include: { assignees: true }
     });
