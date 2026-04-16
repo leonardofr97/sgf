@@ -48,7 +48,8 @@ model Event {
   title       String
   description String?
   date        DateTime
-  recurrence  String?
+  endDate     DateTime?
+  recurrence  String? // daily, weekly, monthly
   familyId    Int
   family      Family    @relation(fields: [familyId], references: [id])
   comments    Comment[] @relation("EventComments")
