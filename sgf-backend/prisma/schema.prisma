@@ -58,11 +58,12 @@ model Event {
 model Document {
   id          Int       @id @default(autoincrement())
   name        String
-  category    String?
+  type        String
   fileUrl     String
-  uploadedBy  Int
+  size        Int
   familyId    Int
   family      Family    @relation(fields: [familyId], references: [id])
+  createdAt   DateTime  @default(now())
   comments    Comment[] @relation("DocumentComments")
 }
 
