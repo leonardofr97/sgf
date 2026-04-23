@@ -43,6 +43,16 @@ export const createTask = async (req, res) => {
       include: { assignees: true }
     });
 
+    // Create notifications for assignees
+    if (assigneeIds && assigneeIds.length > 0) {
+      await prisma.notification.createMany({
+        data: assigneeIds.map(userId => ({
+          userId,
+          message: `Nova tarefa atribuída: ${title}`
+        }))
+      });
+    }
+
     res.status(201).json(task);
   } catch (err) {
     res.status(500).json({ error: err.message });

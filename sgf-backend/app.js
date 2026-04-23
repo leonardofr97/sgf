@@ -6,6 +6,7 @@ import taskRoutes from "./routes/taskRoutes.js";
 import inviteRoutes from "./routes/inviteRoutes.js";
 import eventRoutes from "./routes/eventRoutes.js";
 import documentRoutes from "./routes/documentRoutes.js";
+import notificationRoutes from "./routes/notificationRoutes.js";
 
 dotenv.config();
 
@@ -18,5 +19,6 @@ app.use("/api/tasks", taskRoutes);
 app.use("/api/invites", inviteRoutes);
 app.use("/api/events", eventRoutes);
 app.use("/api/documents", documentRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 export default app;
