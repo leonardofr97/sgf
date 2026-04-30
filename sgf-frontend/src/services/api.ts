@@ -1,7 +1,9 @@
 const API_URL = "http://localhost:4000/api";
 
+type ApiPayload = Record<string, unknown>;
+
 export const api = {
-  register: async (data: any) => {
+  register: async (data: ApiPayload) => {
     const res = await fetch(`${API_URL}/auth/register`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -10,7 +12,7 @@ export const api = {
     return res.json();
   },
 
-  login: async (data: any) => {
+  login: async (data: ApiPayload) => {
     const res = await fetch(`${API_URL}/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -31,11 +33,38 @@ export const api = {
     return res.json();
   },
 
-  createTask: async (data: any) => {
+  getUsers: async () => {
+    const token = localStorage.getItem("token");
+
+    const res = await fetch(`${API_URL}/auth/users`, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+
+    return res.json();
+  },
+
+  createTask: async (data: ApiPayload) => {
     const token = localStorage.getItem("token");
 
     const res = await fetch(`${API_URL}/tasks`, {
       method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify(data)
+    });
+
+    return res.json();
+  },
+
+  updateTask: async (id: number, data: ApiPayload) => {
+    const token = localStorage.getItem("token");
+
+    const res = await fetch(`${API_URL}/tasks/${id}`, {
+      method: "PUT",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`

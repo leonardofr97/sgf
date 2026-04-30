@@ -38,3 +38,31 @@ export const login = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+export const getFamilyUsers = async (req, res) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.userId },
+      select: { familyId: true },
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: "Usuário não encontrado" });
+    }
+
+    const users = await prisma.user.findMany({
+      where: { familyId: user.familyId },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+      },
+      orderBy: { name: "asc" },
+    });
+
+    res.json(users);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
