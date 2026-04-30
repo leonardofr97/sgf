@@ -29,5 +29,20 @@ export const api = {
     });
 
     return res.json();
+  },
+
+  createTask: async (data: any) => {
+    const token = localStorage.getItem("token");
+
+    const res = await fetch(`${API_URL}/tasks`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify(data)
+    });
+
+    return res.json();
   }
 };
