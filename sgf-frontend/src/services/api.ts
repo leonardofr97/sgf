@@ -73,5 +73,30 @@ export const api = {
     });
 
     return res.json();
+  },
+
+  getNotifications: async () => {
+    const token = localStorage.getItem("token");
+
+    const res = await fetch(`${API_URL}/notifications`, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+
+    return res.json();
+  },
+
+  markNotificationAsRead: async (id: number) => {
+    const token = localStorage.getItem("token");
+
+    const res = await fetch(`${API_URL}/notifications/${id}/read`, {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+
+    return res.json();
   }
 };

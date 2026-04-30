@@ -18,6 +18,13 @@ type Task = {
   assignees?: User[];
 };
 
+type Notification = {
+  id: number;
+  message: string;
+  read: boolean;
+  createdAt: string;
+};
+
 type Priority = "baixa" | "media" | "alta";
 
 const priorities: Array<{
@@ -52,14 +59,21 @@ const getPriorityConfig = (priority: string) =>
 export default function Dashboard() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [users, setUsers] = useState<User[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState<Priority>("media");
   const [assigneeIds, setAssigneeIds] = useState<number[]>([]);
+  const unreadNotifications = notifications.filter(notification => !notification.read);
 
   const loadTasks = async () => {
     const data = await api.getTasks();
     if (!data.error) setTasks(data);
+  };
+
+  const loadNotifications = async () => {
+    const data = await api.getNotifications();
+    if (!data.error) setNotifications(data);
   };
 
   useEffect(() => {
@@ -71,13 +85,15 @@ export default function Dashboard() {
     }
 
     const loadInitialData = async () => {
-      const [tasksData, usersData] = await Promise.all([
+      const [tasksData, usersData, notificationsData] = await Promise.all([
         api.getTasks(),
-        api.getUsers()
+        api.getUsers(),
+        api.getNotifications()
       ]);
 
       if (!tasksData.error) setTasks(tasksData);
       if (!usersData.error) setUsers(usersData);
+      if (!notificationsData.error) setNotifications(notificationsData);
     };
 
     void loadInitialData();
@@ -107,6 +123,7 @@ export default function Dashboard() {
     setTasks(current =>
       current.map(item => (item.id === updatedTask.id ? updatedTask : item))
     );
+    void loadNotifications();
   };
 
   const completeTask = async (task: Task) => {
@@ -152,13 +169,86 @@ export default function Dashboard() {
       setDescription("");
       setPriority("media");
       setAssigneeIds([]);
-      loadTasks();
+      void loadTasks();
+      void loadNotifications();
     }
+  };
+
+  const markNotificationAsRead = async (notification: Notification) => {
+    const updatedNotification = await api.markNotificationAsRead(notification.id);
+
+    if (updatedNotification.error) {
+      alert(updatedNotification.error);
+      return;
+    }
+
+    setNotifications(current =>
+      current.map(item =>
+        item.id === updatedNotification.id ? updatedNotification : item
+      )
+    );
   };
 
   return (
     <main className="mx-auto max-w-4xl p-6 sm:p-10">
-      <h1 className="mb-4 text-xl font-bold">Tarefas</h1>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-xl font-bold">Tarefas</h1>
+        <div className="rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-sm font-semibold text-sky-700">
+          {unreadNotifications.length} nao lida
+          {unreadNotifications.length === 1 ? "" : "s"}
+        </div>
+      </div>
+
+      <section className="mb-6 rounded border p-3">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <h2 className="font-semibold">Notificacoes</h2>
+          <button
+            type="button"
+            onClick={loadNotifications}
+            className="rounded border px-3 py-1 text-sm font-medium"
+          >
+            Atualizar
+          </button>
+        </div>
+
+        {notifications.length === 0 ? (
+          <p className="text-sm text-gray-500">Nenhuma notificacao encontrada</p>
+        ) : (
+          <ul className="space-y-2">
+            {notifications.map(notification => (
+              <li
+                key={notification.id}
+                className={`flex flex-wrap items-center justify-between gap-3 rounded border p-3 text-sm ${
+                  notification.read
+                    ? "bg-white text-gray-600"
+                    : "border-sky-200 bg-sky-50 text-gray-950"
+                }`}
+              >
+                <div>
+                  <p className="font-medium">{notification.message}</p>
+                  <time className="text-xs text-gray-500">
+                    {new Date(notification.createdAt).toLocaleString("pt-BR")}
+                  </time>
+                </div>
+
+                {notification.read ? (
+                  <span className="rounded-full border px-3 py-1 text-xs font-medium text-gray-500">
+                    Lida
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => markNotificationAsRead(notification)}
+                    className="rounded bg-sky-600 px-3 py-2 text-xs font-semibold text-white"
+                  >
+                    Marcar como lida
+                  </button>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
 
       <section className="mb-6 space-y-3">
         <input
