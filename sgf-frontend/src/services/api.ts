@@ -17,5 +17,17 @@ export const api = {
       body: JSON.stringify(data)
     });
     return res.json();
+  },
+
+  getTasks: async () => {
+    const token = localStorage.getItem("token");
+
+    const res = await fetch(`${API_URL}/tasks`, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+
+    return res.json();
   }
 };
