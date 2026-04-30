@@ -14,15 +14,47 @@ type Task = {
   title: string;
   description?: string | null;
   status: string;
-  priority: string;
+  priority: Priority;
   assignees?: User[];
 };
+
+type Priority = "baixa" | "media" | "alta";
+
+const priorities: Array<{
+  value: Priority;
+  label: string;
+  badgeClassName: string;
+  optionClassName: string;
+}> = [
+  {
+    value: "baixa",
+    label: "Baixa",
+    badgeClassName: "border-emerald-200 bg-emerald-50 text-emerald-700",
+    optionClassName: "border-emerald-200 bg-emerald-50 text-emerald-700"
+  },
+  {
+    value: "media",
+    label: "Media",
+    badgeClassName: "border-amber-200 bg-amber-50 text-amber-700",
+    optionClassName: "border-amber-200 bg-amber-50 text-amber-700"
+  },
+  {
+    value: "alta",
+    label: "Alta",
+    badgeClassName: "border-rose-200 bg-rose-50 text-rose-700",
+    optionClassName: "border-rose-200 bg-rose-50 text-rose-700"
+  }
+];
+
+const getPriorityConfig = (priority: string) =>
+  priorities.find(item => item.value === priority) ?? priorities[1];
 
 export default function Dashboard() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [priority, setPriority] = useState<Priority>("media");
   const [assigneeIds, setAssigneeIds] = useState<number[]>([]);
 
   const loadTasks = async () => {
@@ -90,12 +122,26 @@ export default function Dashboard() {
     );
   };
 
+  const updateTaskPriority = async (task: Task, nextPriority: Priority) => {
+    const updatedTask = await api.updateTask(task.id, { priority: nextPriority });
+
+    if (updatedTask.error) {
+      alert(updatedTask.error);
+      return;
+    }
+
+    setTasks(current =>
+      current.map(item => (item.id === updatedTask.id ? updatedTask : item))
+    );
+  };
+
   const handleCreateTask = async () => {
     if (!title) return alert("Título obrigatório");
 
     const res = await api.createTask({
       title,
       description,
+      priority,
       assigneeIds
     });
 
@@ -104,6 +150,7 @@ export default function Dashboard() {
     } else {
       setTitle("");
       setDescription("");
+      setPriority("media");
       setAssigneeIds([]);
       loadTasks();
     }
@@ -126,6 +173,27 @@ export default function Dashboard() {
           value={description}
           onChange={e => setDescription(e.target.value)}
         />
+
+        <fieldset className="rounded border p-3">
+          <legend className="px-1 text-sm font-medium">Prioridade</legend>
+          <div className="grid gap-2 sm:grid-cols-3">
+            {priorities.map(item => (
+              <label
+                key={item.value}
+                className={`flex cursor-pointer items-center justify-between rounded border px-3 py-2 text-sm font-medium ${item.optionClassName}`}
+              >
+                <span>{item.label}</span>
+                <input
+                  type="radio"
+                  name="priority"
+                  value={item.value}
+                  checked={priority === item.value}
+                  onChange={() => setPriority(item.value)}
+                />
+              </label>
+            ))}
+          </div>
+        </fieldset>
 
         <fieldset className="rounded border p-3">
           <legend className="px-1 text-sm font-medium">Responsaveis</legend>
@@ -160,12 +228,35 @@ export default function Dashboard() {
         <p>Nenhuma tarefa encontrada</p>
       ) : (
         <ul className="space-y-2">
-          {tasks.map(task => (
+          {tasks.map(task => {
+            const priorityConfig = getPriorityConfig(task.priority);
+
+            return (
             <li key={task.id} className="rounded border p-3">
-              <h2 className="font-semibold">{task.title}</h2>
+              <div className="flex flex-wrap items-start justify-between gap-2">
+                <h2 className="font-semibold">{task.title}</h2>
+                <span
+                  className={`rounded-full border px-3 py-1 text-xs font-semibold ${priorityConfig.badgeClassName}`}
+                >
+                  {priorityConfig.label}
+                </span>
+              </div>
               <p>{task.description}</p>
               <p>Status: {task.status}</p>
-              <p>Prioridade: {task.priority}</p>
+              <label className="mt-3 flex flex-col gap-1 text-sm font-medium sm:w-56">
+                Prioridade
+                <select
+                  className="rounded border bg-white p-2 text-sm text-gray-900"
+                  value={priorityConfig.value}
+                  onChange={e => updateTaskPriority(task, e.target.value as Priority)}
+                >
+                  {priorities.map(item => (
+                    <option key={item.value} value={item.value}>
+                      {item.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
               {task.status === "pendente" && (
                 <button
                   onClick={() => completeTask(task)}
@@ -196,7 +287,8 @@ export default function Dashboard() {
                 )}
               </fieldset>
             </li>
-          ))}
+            );
+          })}
         </ul>
       )}
     </main>

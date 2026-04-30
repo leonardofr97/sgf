@@ -2,6 +2,18 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
+const validPriorities = new Set(["baixa", "media", "alta"]);
+
+const normalizePriority = (priority) => {
+  if (priority === undefined) return undefined;
+
+  const normalizedPriority = String(priority).toLowerCase();
+  const priorityWithoutAccent =
+    normalizedPriority === "média" ? "media" : normalizedPriority;
+
+  return validPriorities.has(priorityWithoutAccent) ? priorityWithoutAccent : null;
+};
+
 const normalizeAssigneeIds = (assigneeIds) => {
   if (assigneeIds === undefined) return undefined;
   if (!Array.isArray(assigneeIds)) return null;
@@ -52,7 +64,11 @@ const assigneesSelect = {
 };
 
 const assigneeErrorStatus = (message) =>
-  message.includes("Responsaveis") || message.includes("usuarios") ? 400 : 500;
+  message.includes("Responsaveis") ||
+  message.includes("usuarios") ||
+  message.includes("Prioridade")
+    ? 400
+    : 500;
 
 export const createTask = async (req, res) => {
   try {
@@ -66,6 +82,11 @@ export const createTask = async (req, res) => {
       return res.status(404).json({ error: "Usuario nao encontrado" });
     }
 
+    const normalizedPriority = normalizePriority(priority);
+    if (normalizedPriority === null) {
+      return res.status(400).json({ error: "Prioridade invalida" });
+    }
+
     const assigneesResult = await getAssigneesData(assigneeIds, user.familyId);
     const normalizedAssigneeIds = assigneesResult?.normalizedIds ?? [];
     const assigneesConnect =
@@ -77,7 +98,7 @@ export const createTask = async (req, res) => {
       data: {
         title,
         description,
-        priority,
+        priority: normalizedPriority,
         dueDate: dueDate ? new Date(dueDate) : null,
         createdBy: user.id,
         familyId: user.familyId,
@@ -145,6 +166,11 @@ export const updateTask = async (req, res) => {
       return res.status(403).json({ error: "Acesso negado" });
     }
 
+    const normalizedPriority = normalizePriority(priority);
+    if (normalizedPriority === null) {
+      return res.status(400).json({ error: "Prioridade invalida" });
+    }
+
     const assigneesResult = await getAssigneesData(assigneeIds, user.familyId);
 
     const updatedTask = await prisma.task.update({
@@ -152,7 +178,7 @@ export const updateTask = async (req, res) => {
       data: {
         title,
         description,
-        priority,
+        priority: normalizedPriority,
         status,
         dueDate: dueDate === undefined ? undefined : dueDate ? new Date(dueDate) : null,
         assignees: assigneesResult?.assigneesData,
