@@ -77,6 +77,19 @@ export default function Dashboard() {
     );
   };
 
+  const completeTask = async (task: Task) => {
+    const updatedTask = await api.updateTask(task.id, { status: "concluído" });
+
+    if (updatedTask.error) {
+      alert(updatedTask.error);
+      return;
+    }
+
+    setTasks(current =>
+      current.map(item => (item.id === updatedTask.id ? updatedTask : item))
+    );
+  };
+
   const handleCreateTask = async () => {
     if (!title) return alert("Título obrigatório");
 
@@ -153,6 +166,14 @@ export default function Dashboard() {
               <p>{task.description}</p>
               <p>Status: {task.status}</p>
               <p>Prioridade: {task.priority}</p>
+              {task.status === "pendente" && (
+                <button
+                  onClick={() => completeTask(task)}
+                  className="mt-3 rounded bg-green-600 px-3 py-2 text-sm font-medium text-white"
+                >
+                  Marcar como concluído
+                </button>
+              )}
               <fieldset className="mt-3 rounded border p-3">
                 <legend className="px-1 text-sm font-medium">Responsaveis</legend>
                 {users.length === 0 ? (
